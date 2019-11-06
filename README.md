@@ -90,14 +90,14 @@ fun getAllUserByIdOrName(idSearch:Int,nameSearch:String):LiveData<List<User>>
 
 - Nói rõ hơn về phần tìm kiếm, về chức năng này ta thường cần là tìm các dữ liệu có chứa "key". Và ta sẽ phải dùng *%key%* trong câu truy vấn SQL. Ví dụ
 
-```
+````
 Select * from tbl_user where name like '%key%'
-```
+````
 
 Nhưng nếu để cả "%:key%" vào annotation *@Query* thì nó sẽ báo đỏ. Để sử dụng được cái này, ta xử lý thông qua 2 cách sau:
-    - Cách 1: Tham số truyền vào sẽ là "%textSearch%" như vậy sẽ không bị lỗi.
+    + Cách 1: Tham số truyền vào sẽ là "%textSearch%" như vậy sẽ không bị lỗi:
     
-```
+``
 @Dao
 interface UserDao {
     @Query("Select * from tbl_user where name like :key")
@@ -111,10 +111,26 @@ class Repo{
         //userDao đây sẽ là instance của UserDao interface, lấy instance này ra sử dụng như nào sẽ đề cập sau
     }
 }
-```
+``
+    + Cách 2: Tham số truyền vào bình thường, nhưng ta sẽ sử dụng || để nối String, || nó có tác dụng tương tự + khi nối chuỗi, có thể hiểu như vậy:
+    
+``
+@Dao
+interface UserDao {
+    @Query("Select * from tbl_user where name like '%' || :key || '%' ")
+    fun search(key:String):LiveData<List<User>>
+}
 
-    - Các
-- Tuy nhiên Sqlite có thì room cũng có. SQLite có những hàm insert, update, delete thì RoomDB cũng  vậy. Nó hỗ trợ sẵn các phần này. Thật ra còn xịn hơn. RoomDB support 3 chức năng này lần lượt là @INSERT, @UPDATE, @DELETE sử dụng đơn giản như sau:
+class Repo{
+    fun search(key:String):LiveData<List<User>>{
+        return userDao.search(key) 
+        //userDao đây sẽ là instance của UserDao interface, lấy instance này ra sử dụng như nào sẽ đề cập sau
+    }
+}
+``
+
+- Phía trên là hướng dẫn với những câu lệnh select cho phổ biến, đương nhiên nó cũng có thể áp dụng với các câu truy vấn insert, update và cũng như sort order, join, select in select,... như bình thường.
+  Tuy nhiên Sqlite có thì room cũng có. SQLite có những hàm insert, update, delete thì RoomDB cũng  vậy. Nó hỗ trợ sẵn các phần này. Thật ra còn xịn hơn. RoomDB support 3 chức năng này lần lượt là @INSERT, @UPDATE, @DELETE sử dụng đơn giản như sau:
 *Phía dưới này có thể đúng hoặc sai =))*
 
 ```
@@ -132,6 +148,53 @@ fun delete(user:User)
   * Với *OnConflictStrategy.IGNORE* nó sẽ từ chối hành động này và trả ra kết quả là -1 nếu như hàm phía dưới có trả về kiểu Long. Còn nếu insert thành công sẽ trả ra là id vừa được add vào.
   *  Còn với *OnConflictStrategy.REPLACE* nó sẽ remove đi dữ liệu đang bị trùng có trong DB và thay thế bằng dữ liệu được truyền vào
 - Còn @Delete thì thôi, chắc tự hiểu đi =))
+- Có một lưu ý với việc thay đổi dữ liệu bằng insert, update, delete là ta nên cho nó chạy nền để tránh bị đơ app vì nó có khả năng lấy lại dữ liệu khi DB thay đổi nên chẳng may dữ liệu nó gây đơ app mà hình như có lúc nó cũng gây ra crash app vì yêu cầu hàm này phải chạy nền =))
 
+- Phần *Dao* sẽ tạm đến đây. Tiếp đến ta sẽ nói đến việc sử dụng cái Dao này ở đâu.
+- Trước hết để sử dụng được Dao này. Ta phải tạo được database đã. Với room, ta không cần phải chạy tự tạo câu lệnh create vất vả như trong SQLite, đơn giản ta chỉ cẩn tạo instance cho nó trong một cái abstract class extends RoomDatabase và khai báo với 1 số annotation nho nhỏ:
 
+```
+@Database(entities = {User.class, School.class}, version = 1)
+abstract class MyAppDatabase: RoomDatabase() {
+abstract fun userDao():UserDao
+abstract fun schoolDao():SchoolDao
+    companion object{
+        private var instance:ConvertedAudioDB?= null
+        @Synchronized
+        fun getInstance(context:Context): ConvertedAudioDB {
+            if (instance == null) {
+                instance = Room.databaseBuilder(
+                    context,
+                    ConvertedAudioDB::class.java, "app_db"
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
+            }
+            return instance!!
+        }
+    }
+```
 
+- Với annotation *@Database* ta sẽ có được 1 DB với các bảng là tương ứng với list entities khai báo bên trong. Ở đây ta sẽ có 2 bảng là User và Scholl được định nghĩa như phía trên đã làm với class User. Version = 1 tức là version của DB ở đây = 1.
+- Phía dưới ta sử dụng Room.databaseBuilder để tạo ra instance cho roomdb với tham số truyền vào lần lượt là context, class type của DB cũng tức chính là ClassDB hiện tại ::class.java và tiếp đến là tên DB "app_db".
+- Chỉ đơn giản như vậy thôi. Mỗi lần ta cần đến DB thì ta chỉ cần gọi MyAppDatabase.getInstance(context).
+- Với việc khởi tạo như này RoomDB sẽ tự sinh ra cho chúng ta một file để xử lý cái hàm userDao() kia. Nhìn tưởng chừng như hư cấu nhưng thật ra nó làm được. Khi chúng ta gọi đến MyAppDatabase.getInstance(context).userDao() là nó sẽ trả về cho chúng ta một instance của interface UserDao đã tạo ở phía trên. Như vậy ta hoàn toàn có thể lấy instance này để sử dụng được các hàm bên trong nó ví dụ như getAllUser() chẳng hạn.
+
+### Sử dụng Dao ở đâu
+- Về việc sử dụng *Dao này, ta sẽ tạo 1 lớp Repository ra chuyên sử lý dữ liệu liên quan đến cái bảng đó. Ví dụ bảng User thì sẽ có UserRepository - Viết tắt Repo cũng được
+- Trong này sẽ chứa instance của userDao lấy từ db tức là nó sẽ có 1 thuộc tính là *userDao = MyAppDatabase.getInstance(context).userDao()* và nó cũng có toàn bộ các hàm xử lý như get,insert, update, delete ở đây. Ví dụ như ở trên có hàm search ta phải sử lý việc thêm dấu '%' vào chẳng hạn, ta sẽ thêm trung gian ở phần này hoặc insert, update cần trong 1 luồng background nên ta cũng phải tạo ở đây để xử lý trung gian.
+Ví dụ:
+
+```
+class UserRepository{
+    val userDao = MyAppDatabase.getInstance(App.app).userDao() 
+    //App.app ở đây là instance của lớp Application
+    //Nếu không có lớp Application ta phải truyền context vào để lấy ra được database
+    fun insert(user:User){
+        launch(){
+            userDao.insert(user)
+        }
+    }
+}
+```
+- Nếu như sử dụng view model thì ta sẽ khai báo instance của UserRepository trong View Model hoặc ta cũng có thể biến UserRepository thành lớp object như vậy ta muốn insert chỉ cần gọi UserRepository.insert(user)
