@@ -181,7 +181,7 @@ abstract fun schoolDao():SchoolDao
 - Với việc khởi tạo như này RoomDB sẽ tự sinh ra cho chúng ta một file để xử lý cái hàm userDao() kia. Nhìn tưởng chừng như hư cấu nhưng thật ra nó làm được. Khi chúng ta gọi đến MyAppDatabase.getInstance(context).userDao() là nó sẽ trả về cho chúng ta một instance của interface UserDao đã tạo ở phía trên. Như vậy ta hoàn toàn có thể lấy instance này để sử dụng được các hàm bên trong nó ví dụ như getAllUser() chẳng hạn.
 
 ### Sử dụng Dao ở đâu
-- Về việc sử dụng *Dao này, ta sẽ tạo 1 lớp Repository ra chuyên sử lý dữ liệu liên quan đến cái bảng đó. Ví dụ bảng User thì sẽ có UserRepository - Viết tắt Repo cũng được
+- Về việc sử dụng *Dao* này, ta sẽ tạo 1 lớp Repository ra chuyên sử lý dữ liệu liên quan đến cái bảng đó. Ví dụ bảng User thì sẽ có UserRepository - Viết tắt Repo cũng được
 - Trong này sẽ chứa instance của userDao lấy từ db tức là nó sẽ có 1 thuộc tính là *userDao = MyAppDatabase.getInstance(context).userDao()* và nó cũng có toàn bộ các hàm xử lý như get,insert, update, delete ở đây. Ví dụ như ở trên có hàm search ta phải sử lý việc thêm dấu '%' vào chẳng hạn, ta sẽ thêm trung gian ở phần này hoặc insert, update cần trong 1 luồng background nên ta cũng phải tạo ở đây để xử lý trung gian.
 Ví dụ:
 
