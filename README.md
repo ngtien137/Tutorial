@@ -36,7 +36,7 @@ dependencies {
   
   * Ngoài ra còn có vài cái annotation nữa như @TypeConverters,@TypeConverter: Cái này sẽ dùng trong trường hợp trong object có thuộc tính là object. Nó sẽ convert object sang string json để lưu vào DB bởi như đã nói ở trên nhìn thì RoomDB như đang lưu object nhưng thực ra nó vẫn là SQLite nên nó không thể nào lưu object được. Phải convert về dạng chuẩn để lưu nhưng nó support mình. Hoàn toàn tự động. Về cái annotation này trở đi thì sẽ là phần nâng cao hơn rồi nên sẽ không đề cập đến. Tự tìm hiểu =))
   
-  * Chuyển sang ví dụ cụ thể, ta sẽ tạo 1 class User
+- Chuyển sang ví dụ cụ thể, ta sẽ tạo 1 class User
 ```
 @Entity(tableName="tbl_user") //class User sẽ tương ứng với bảng tbl_user trong DB
 class User{
