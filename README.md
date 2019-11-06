@@ -60,12 +60,63 @@ interface UserDao {
     
 }
 ```
-- Như đã thấy, ta đang sử dụng là interface như vậy các hàm của chúng ta sẽ không có phần body. Vậy room sẽ chạy hàm này dựa vào đâu? Chỗ dựa lớn nhất của nó ở đây là annotation *@Query()*. Có một thứ mà ta cần khi sử dụng room đó là ta phải có kiến thức về SQL. Bởi tham số truyền vào annotation *@Query()* chính là một câu truy vấn. Ví dụ: 
+- Như đã thấy, ta đang sử dụng là interface như vậy các hàm của chúng ta sẽ không có phần body. Vậy room sẽ chạy hàm này dựa vào đâu? Chỗ dựa lớn nhất của nó ở đây là annotation của nó *@Query()*. Có một thứ mà ta cần khi sử dụng room đó là ta phải có kiến thức về SQL. Bởi tham số truyền vào annotation *@Query()* chính là một câu truy vấn. Ví dụ: 
+
 ```
 @Query("Select * from tbl_user")
 ```
+
+- Câu truy vấn trên như đã biết chính là lấy toàn bộ dữ liệu có trong bảng *tbl_user*. Annotation *@Query* với truy vấn này sẽ được áp dụng cho hàm ở phía dưới nó và cần một dữ liệu trả ra tối thiểu là một List:
+
+```
+@Query("Select * from tbl_user")
+fun getAllUser():List<User>
+```
+
+- Hoặc ta cũng có thể sử dụng nó với live data luôn:
+
+```
+@Query("Select * from tbl_user")
+fun getAllUser():LiveData<List<User>>
+```
+
+- Với Live data là dữ liệu trả về hoặc sử dụng hợp lý thì mỗi khi database có sự thay đổi thì ta cũng sẽ nhận biết được có sự thay đổi của nó thông qua listener của Live data. Chứ không phải check mỗi khi thêm, sửa, xóa lại phải lấy lại dữ liệu như Sqlite.
+- Hiển nhiên các trường hợp sử dụng với DB không chỉ là sử dụng câu truy vấn cứng ngắc thế kia. Ta còn có những trường hợp như tìm kiếm, sắp xếp, lấy số lượng theo một thuộc tính nào đó,... Điều này dẫn đến ta cần truyền một biến vào trong annotation. Để truyền một biến vào annotation *@Query*, ta sử dụng *:parameter*. Ví dụ để lấy ra danh sách những User có idSearch hoặc nameSearch, ta làm như sau:
+
+```
+@Query("Select * from tbl_user where id=:idSearch or name=:nameSearch")
+fun getAllUserByIdOrName(idSearch:Int,nameSearch:String):LiveData<List<User>>
+```
+
+- Nói rõ hơn về phần tìm kiếm, về chức năng này ta thường cần là tìm các dữ liệu có chứa "key". Và ta sẽ phải dùng *%key%* trong câu truy vấn SQL. Ví dụ
+
+```
+Select * from tbl_user where name like '%key%'
+```
+
+Nhưng nếu để cả "%:key%" vào annotation *@Query* thì nó sẽ báo đỏ. Để sử dụng được cái này, ta xử lý thông qua 2 cách sau:
+    - Cách 1: Tham số truyền vào sẽ là "%textSearch%" như vậy sẽ không bị lỗi.
+    
+```
+@Dao
+interface UserDao {
+    @Query("Select * from tbl_user where name like :key")
+    fun search(key:String):LiveData<List<User>>
+}
+
+class Repo{
+    fun search(key:String):LiveData<List<User>>{
+        var textSearch = "%"+key+"%"
+        return userDao.search(textSearch) 
+        //userDao đây sẽ là instance của UserDao interface, lấy instance này ra sử dụng như nào sẽ đề cập sau
+    }
+}
+```
+
+    - Các
 - Tuy nhiên Sqlite có thì room cũng có. SQLite có những hàm insert, update, delete thì RoomDB cũng  vậy. Nó hỗ trợ sẵn các phần này. Thật ra còn xịn hơn. RoomDB support 3 chức năng này lần lượt là @INSERT, @UPDATE, @DELETE sử dụng đơn giản như sau:
 *Phía dưới này có thể đúng hoặc sai =))*
+
 ```
 @Insert(onConflict = OnConflictStrategy.IGNORE)
 fun insert(user:User):Long
