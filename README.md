@@ -23,14 +23,19 @@ dependencies {
 ```
 * Về bản chất vẫn là SQLite nhưng RoomDB hỗ trợ lưu dữ liệu thông qua dạng object. Vì thế ta vẫn tạo 1 class như bình thường nhưng có sử dụng những chức năng của RoomDB trong này.
   * Đó là các annotation của RoomDB:
-```
+  
   *Ghi chú: {Name} sẽ là biến Name*
+  
   * @Entity(tableName={tableName}) - Định nghĩa lớp phía dưới sẽ tương tứng với bảng *tableName* trong DB, Ví dụ *@Entity(tableName="tbl_user")*
+  
   * @ColumnInfo(name={columnName}) - Định nghĩa thuộc tính phía dưới sẽ tương ứng với tên cột *columnName* trong DB, Ví dụ *@ColumnInfo(name="user_id")*
+  
   * @PrimaryKey() - Định nghĩa thuộc tính phía dưới là khóa chính của bảng. Nếu thuộc tính phía dưới là Int hoặc Long và muốn nó tự động được sinh ra thì có thể thêm vào thành *@PrimaryKey(autoGenerate = true)*
+  
   * @Ignore: - Hàm, thuộc tính, constructor phía dưới sẽ không được lưu vào trong DB. Ví dụ ta có một hàm chuyển đổi định dạng file, hay lấy ra đuôi file từ thuộc tính đường dẫn của đối tượng chẳng hạn. Vì vậy ta sẽ sử dụng cả lớp File trong hàm đó. Hoặc 2 constructor lưuu vào DB là điều không cần thiết và những cái thừa thãi này hình như gây ra lỗi =)) Không nhớ lắm nên tốt nhất là để class ở mức đơn giản để lưu vào DB thôi.
+  
   * Ngoài ra còn có vài cái annotation nữa như @TypeConverters,@TypeConverter: Cái này sẽ dùng trong trường hợp trong object có thuộc tính là object. Nó sẽ convert object sang string json để lưu vào DB bởi như đã nói ở trên nhìn thì RoomDB như đang lưu object nhưng thực ra nó vẫn là SQLite nên nó không thể nào lưu object được. Phải convert về dạng chuẩn để lưu nhưng nó support mình. Hoàn toàn tự động. Về cái annotation này trở đi thì sẽ là phần nâng cao hơn rồi nên sẽ không đề cập đến. Tự tìm hiểu =))
-```
+  
   * Chuyển sang ví dụ cụ thể, ta sẽ tạo 1 class User
 ```
 @Entity(tableName="tbl_user") //class User sẽ tương ứng với bảng tbl_user trong DB
