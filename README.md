@@ -60,5 +60,27 @@ interface UserDao {
     
 }
 ```
-- Như đã thấy, ta đang sử dụng là interface như vậy các hàm của chúng ta sẽ không có phần body. Vậy room sẽ chạy hàm này dựa vào đâu? Chỗ dựa lớn nhất của nó ở đây là annotation @Query
+- Như đã thấy, ta đang sử dụng là interface như vậy các hàm của chúng ta sẽ không có phần body. Vậy room sẽ chạy hàm này dựa vào đâu? Chỗ dựa lớn nhất của nó ở đây là annotation *@Query()*. Có một thứ mà ta cần khi sử dụng room đó là ta phải có kiến thức về SQL. Bởi tham số truyền vào annotation *@Query()* chính là một câu truy vấn. Ví dụ: 
+```
+@Query("Select * from tbl_user")
+```
+- Tuy nhiên Sqlite có thì room cũng có. SQLite có những hàm insert, update, delete thì RoomDB cũng  vậy. Nó hỗ trợ sẵn các phần này. Thật ra còn xịn hơn. RoomDB support 3 chức năng này lần lượt là @INSERT, @UPDATE, @DELETE sử dụng đơn giản như sau:
+*Phía dưới này có thể đúng hoặc sai =))*
+```
+@Insert(onConflict = OnConflictStrategy.IGNORE)
+fun insert(user:User):Long
+//Với hàm insert này có thể trả về hoặc không trả về nhưng nếu trả về là id autoincrement thì phải là kiểu Long
+//Dùng Int sẽ crash
+@Update(onConflict = OnConflictStrategy.REPLACE)
+fun update(user:User)
+@Delete
+fun delete(user:User)
+```
+
+- Như vậy, chỉ cần gọi đến hàm insert và truyền vào 1 user thì nếu thành công trong bảng tbl_user của chúng ta đã có dữ liệu của user đó rồi. Nhưng onConflict ở đây là sao? onConflict là một cờ giúp check ta sẽ làm gì nếu như gặp trường hợp primary key trùng nhau hay nói cách khác là object tồn tại trong DB rồi.
+  * Với *OnConflictStrategy.IGNORE* nó sẽ từ chối hành động này và trả ra kết quả là -1 nếu như hàm phía dưới có trả về kiểu Long. Còn nếu insert thành công sẽ trả ra là id vừa được add vào.
+  *  Còn với *OnConflictStrategy.REPLACE* nó sẽ remove đi dữ liệu đang bị trùng có trong DB và thay thế bằng dữ liệu được truyền vào
+- Còn @Delete thì thôi, chắc tự hiểu đi =))
+
+
 
